@@ -15,6 +15,8 @@ import jakarta.persistence.Table;
 public class TierConfig {
 	
 	// change 1435325
+
+	// change 123
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
