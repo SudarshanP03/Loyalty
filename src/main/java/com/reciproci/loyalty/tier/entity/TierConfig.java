@@ -28,7 +28,6 @@ public class TierConfig {
 	private Double maxAmount;
 	private Integer tierLevel;
 
-
 	@ManyToOne
 	@JoinColumn(name = "tier_region_id")
 	private TierRegion tierRegion;

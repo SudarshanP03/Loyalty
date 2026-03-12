@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,14 +28,25 @@ public class BurnRuleController {
 	private BurnRuleService burnRuleService;
 
 	@PostMapping("/v1/save")
-	public ResponseEntity<Object> create(@RequestBody CreateBurnRuleBean createBean) {
+	public ResponseEntity<Object> create(@RequestBody CreateBurnRuleBean createBean, BindingResult bindingResult) {
+		// Validate request body
+		if (createBean == null) {
+			logger.warn("create called with null request body");
+			return new ResponseEntity<Object>(CommonUtil.getInternalServerError(), HttpStatus.BAD_REQUEST);
+		}
+
+		if (bindingResult != null && bindingResult.hasErrors()) {
+			logger.warn("Validation failed for CreateBurnRuleBean: {}", bindingResult.getAllErrors());
+			return new ResponseEntity<Object>(CommonUtil.getInternalServerError(), HttpStatus.BAD_REQUEST);
+		}
+
 		try{
 			burnRuleService.saveBurnRule(createBean);
-			return new ResponseEntity<Object>(CommonUtil.getSuccessMessage(), HttpStatus.OK);
+			return new ResponseEntity<Object>(CommonUtil.getSuccessMessage(), HttpStatus.CREATED);
 		}catch(Exception e) {
-			logger.error("",e);
+			logger.error("Error while saving burn rule", e);
+			return new ResponseEntity<Object>(CommonUtil.getInternalServerError(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<Object>(CommonUtil.getInternalServerError(), HttpStatus.BAD_REQUEST);
 	}
 
 	@PostMapping("/v1/update")
