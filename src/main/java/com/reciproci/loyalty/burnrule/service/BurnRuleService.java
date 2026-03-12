@@ -3,6 +3,7 @@ package com.reciproci.loyalty.burnrule.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -257,10 +258,10 @@ public class BurnRuleService {
 					}).collect(Collectors.toList());
 					viewBean.setRuleLocalList(localeBeans);
 					logger.info("Fetching data for Id :" + burnRuleId + " is done");
-					return viewBean;
 				}
+				return viewBean;
 			} else {
-				logger.error("Error in Burn Rule Service");
+				logger.error("Error in Burn Rule Service at viewBurnRule Method");
 			}
 		} catch (Exception e) {
 			logger.error("Error in BurnRuleService at BurnRule empty/BurnRule Not found");
@@ -269,33 +270,42 @@ public class BurnRuleService {
 	}
 
 	public ViewProgramBean getProgramDetails(Map<String, Object> request) {
-		Object idObj = request.get("burnRuleId");
-		Long burnRuleId = Long.valueOf(idObj.toString());
-		logger.info("Fetching program details on burnRule Id :"+burnRuleId);
-		try {
-			BurnRule burnRule = burnRuleRepository.findById(burnRuleId)
-					.orElseThrow(() ->  new RuntimeException("Burn Rule not found for ID: " + burnRuleId));
-			Program program = programRepo.findById(burnRule.getProgramId()).orElseThrow();
-			ViewProgramBean bean = new ViewProgramBean();
-			bean.setBurnRuleId(burnRule.getId());
-			bean.setRuleName(program.getProgramName());
-			bean.setRewardType(burnRule.getRewardType());
-			bean.setRedeemQty(burnRule.getRewardQty());
-			bean.setStartDate(burnRule.getStartDate());
-			bean.setEndDate(burnRule.getEndDate());
+	    Long burnRuleId = Optional.ofNullable(request.get("burnRuleId"))
+	            .map(obj -> Long.valueOf(obj.toString()))
+	            .orElseThrow(() -> new IllegalArgumentException("Missing burnRuleId in request"));
 
-			bean.setRedeemType(burnRule.getRewardType());
+	    logger.info("Fetching program details for burnRule Id: {}", burnRuleId);
 
-			if (burnRule.getRuleLocaleList() != null && !burnRule.getRuleLocaleList().isEmpty()) {
-				bean.setRuleName(burnRule.getRuleLocaleList().get(0).getRuleName());
-			} else {
-				bean.setRuleName("N/A");
-			}
-			logger.info("Fetching program details is done from BurnRuleService");
-			return bean;
-		} catch (Exception e) {
-			logger.error("Error in BurnRule Service at get program details");
-		}
-		return null;
+	    try {
+	        BurnRule burnRule = burnRuleRepository.findById(burnRuleId)
+	                .orElseThrow(() -> {
+	                    logger.error("Burn Rule not found for ID: {}", burnRuleId);
+	                    return new RuntimeException("Burn Rule not found for ID: " + burnRuleId);
+	                });
+
+	        Program program = programRepo.findById(burnRule.getProgramId())
+	                .orElseThrow(() -> new RuntimeException("Program not found for ID: " + burnRule.getProgramId()));
+
+	        ViewProgramBean bean = new ViewProgramBean();
+	        bean.setBurnRuleId(burnRule.getId());
+	        bean.setRewardType(burnRule.getRewardType());
+	        bean.setRedeemQty(burnRule.getRewardQty());
+	        bean.setStartDate(burnRule.getStartDate());
+	        bean.setEndDate(burnRule.getEndDate());
+	        bean.setRedeemType(burnRule.getRewardType());
+
+	        String ruleName = (burnRule.getRuleLocaleList() != null && !burnRule.getRuleLocaleList().isEmpty())
+	                ? burnRule.getRuleLocaleList().get(0).getRuleName()
+	                : program.getProgramName(); 
+	        
+	        bean.setRuleName(ruleName);
+
+	        logger.info("Successfully fetched program details for BurnRule: {}", burnRuleId);
+	        return bean;
+
+	    } catch (Exception e) {
+	        logger.error("Error in BurnRule Service while fetching program details: {}", e.getMessage());
+	        throw e; 
+	    }
 	}
 }
