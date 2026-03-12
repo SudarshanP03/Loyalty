@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 @Table(name = "tier_configs")
 public class TierConfig {
 
-	// chnage 123
+	// chnage 1234
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
